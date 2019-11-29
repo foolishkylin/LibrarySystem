@@ -4,6 +4,7 @@ int Search(BTree p, int k)
 // fun: searching in a no-left node 
 // ret: the postion of node which value <= k
 // key: none
+//
 {
     int i = 1;
     while(i <= p->keynum && k > p->key[i]) i++;
