@@ -1,6 +1,7 @@
 #ifndef B_TREE_H
 #define B_TREE_H
 #include <stdio.h>
+#include <stdlib.h>
 #define M 3
 typedef int KeyType;
 
@@ -34,4 +35,15 @@ void SearchBTree(BTree t, int k, RES* result);
 //      else tag = 0, return the postion which can be inserted.
 
 
+void split(BTree &q, int s, BTree& ap);
+
+
+void newRoot(BTree &t, BTree p, int x, BTree ap);
+
+
+void Insert(BTree &q, int i, int x, BTree ap);
+
+
+void InsertBTree(BTree &t, int k, BTree q, int i);
+//
 #endif

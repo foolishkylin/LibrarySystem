@@ -4,7 +4,6 @@ int Search(BTree p, int k)
 // fun: searching in a no-left node 
 // ret: the postion of node which value <= k
 // key: none
-//
 {
     int i = 1;
     while(i <= p->keynum && k > p->key[i]) i++;
@@ -44,6 +43,90 @@ void SearchBTree(BTree t, int k, RES *result)
         result->i = i;
         result->tag = 0;
     }
+}
+
+
+void split(BTree &q, int s, BTree& ap)
+{
+	int i, j, n = q->keynum;
+	ap = (BTNode*)malloc(sizeof(BTNode));
+	ap->ptr[0] = q->ptr[s];
+	for (i = s + 1, j = 1; i <= n; i++, j++)
+	{
+		ap->key[j] = q->key[i];
+		ap->ptr[j] = q->ptr[i];
+	}
+	ap->keynum = n - s;
+	ap->parent = q->parent;
+	for (i = 0; i <= n - s; i++)
+		if (ap->ptr[i])
+			ap->ptr[i]->parent = ap;
+	q->keynum = s - 1;
+}
+
+
+void newRoot(BTree &t, BTree p, int x, BTree ap)
+{
+	t = (BTree)malloc(sizeof(BTNode));
+	t->keynum = 1;
+	t->ptr[0] = p;
+	t->ptr[1] = ap;
+	t->key[1] = x;
+	if (p)
+		p->parent = t;
+	if (ap)
+		ap->parent = t;
+	t->parent = NULL;
+}
+
+void Insert(BTree &q, int i, int x, BTree ap)
+{
+	int j, n = q->keynum;
+	for (j = n; j >= i; j--)
+	{
+		q->key[j + 1] = q->key[j];
+		q->ptr[j + 1] = q->ptr[j];
+	}
+	q->key[i] = x;
+	q->ptr[i] = ap;
+	if (ap)
+		ap->parent = q;
+	q->keynum++;
+}
+
+
+
+void InsertBTree(BTree& t, int k, BTree q, int i)
+{
+	int x, s, finished = 0, needNewRoot = 0;
+	BTree ap;
+	if (!q)
+		newRoot(t, NULL, k, NULL);
+	else
+	{
+		x = k, ap = NULL;
+		while (!needNewRoot && !finished)
+		{
+			Insert(q, i, x, ap);
+			if (q->keynum < M)
+				finished = 1;
+			else
+			{
+				s = (M + 1) / 2;
+				split(q, s, ap);
+				if (q->parent)
+				{
+					q = q->parent;
+					i = Search(q, x);
+				}
+				else
+					needNewRoot = 1;
+			}
+		}
+		if (needNewRoot)
+			newRoot(t, q, x, ap);
+	}
+
 }
 
 
