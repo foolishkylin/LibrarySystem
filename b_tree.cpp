@@ -10,6 +10,7 @@ int Search(BTree p, int k)
     return i;
 }
 
+
 void SearchBTree(BTree t, int k, RES &result)
 // fun: searching in a btree 
 // ret: a result ptr including (pt, i, tag)
@@ -18,7 +19,7 @@ void SearchBTree(BTree t, int k, RES &result)
 {
     int i = 0, found = 0;
     BTree p = t, q = NULL;
-    // p points to node needed to search and q points to its parent
+    // p points to node needed to being searched and q points to its parent
     while(p && !found)
     {
         i = Search(p, k);
@@ -46,7 +47,7 @@ void SearchBTree(BTree t, int k, RES &result)
 }
 
 
-void split(BTree &q, int s, BTree& ap)
+void split(BTree &q, int s, BTree &ap)
 {
 	int i, j, n = q->keynum;
 	ap = (BTree)malloc(sizeof(BTNode));
@@ -65,6 +66,8 @@ void split(BTree &q, int s, BTree& ap)
 				ap->ptr[i]->parent = ap;
 		q->keynum = s - 1;
 	}
+	else
+		printf("error in split: memory insufficient.");
 }
 
 
@@ -83,7 +86,10 @@ void newRoot(BTree &t, BTree p, int x, BTree ap)
 			ap->parent = t;
 		t->parent = NULL;
 	}
+	else
+		printf("error in newRoot: memory insufficient.");
 }
+
 
 void Insert(BTree &q, int i, int x, BTree ap)
 {
@@ -101,8 +107,7 @@ void Insert(BTree &q, int i, int x, BTree ap)
 }
 
 
-
-void InsertBTree(BTree& t, int k, BTree q, int i)
+void InsertBTree(BTree &t, int k, BTree q, int i)
 {
 	int x, s, finished = 0, needNewRoot = 0;
 	BTree ap;
@@ -148,6 +153,21 @@ void DeleteBTree(BTree &p, int i)
 	//	if (p->keynum < (m - 1) / 2)
 	//		restore(p, i);
 	//}
+}
+
+
+void ShowBTree(BTree root)
+{
+	if (root)
+	{
+		ShowBTree(root->ptr[1]);
+		for (int i = 1; i <= root->keynum; i++)
+		{
+			printf("%d\n", root->key[i]);
+			if (i > 1)
+				ShowBTree(root->ptr[i]);
+		}
+	}
 }
 
 

@@ -20,7 +20,7 @@ typedef struct
 	BTree pt;
 	int i;
 	int tag;
-} *RES;
+} RESNode, *RES;
 
 int Search(BTree p, int k);
 // fun: searching in a no-left node 
@@ -48,5 +48,8 @@ void InsertBTree(BTree &t, int k, BTree q, int i);
 
 
 void DeleteBTree(BTree &p, int i);
+
+
+void ShowBTree(BTree root);
 //
 #endif
