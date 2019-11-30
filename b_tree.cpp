@@ -125,6 +125,7 @@ void InsertBTree(BTree &t, int k, BTree q, int i)
 			{
 				s = (M + 1) / 2;
 				split(q, s, ap);
+				x = q->key[s];
 				if (q->parent)
 				{
 					q = q->parent;
@@ -156,16 +157,17 @@ void DeleteBTree(BTree &p, int i)
 }
 
 
-void ShowBTree(BTree root)
+void ShowBTree(BTree root, int layer)
 {
 	if (root)
 	{
-		ShowBTree(root->ptr[1]);
+		ShowBTree(root->ptr[0], layer+1);
 		for (int i = 1; i <= root->keynum; i++)
-		{
-			printf("%d\n", root->key[i]);
-			if (i > 1)
-				ShowBTree(root->ptr[i]);
+		{	
+			for (int j = 0; j < layer; j++)
+				printf("    ");
+			printf("    %d\n", root->key[i]);
+			ShowBTree(root->ptr[i], layer + 1);
 		}
 	}
 }

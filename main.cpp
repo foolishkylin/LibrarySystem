@@ -17,12 +17,8 @@ int main()
 			SearchBTree(t, test[i], res);
 			if (!res->tag)
 				InsertBTree(t, test[i], res->pt, res->i);
-			printf("\n--the %dth test, insert %d--\n", i+1, test[i]);
-			printf("\n--version 0--\n");
-			ShowBTree(t);
-			printf("\n--version 1--\n");
-			for (int j = 1; j <= t->keynum; j++)
-				printf("%d", t->key[j]);
+			printf("\n--the %dth test, insert %d--\n\n", i+1, test[i]);
+			ShowBTree(t, 0);
 		}
 
 	}

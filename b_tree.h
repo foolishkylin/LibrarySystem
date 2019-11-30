@@ -50,6 +50,6 @@ void InsertBTree(BTree &t, int k, BTree q, int i);
 void DeleteBTree(BTree &p, int i);
 
 
-void ShowBTree(BTree root);
+void ShowBTree(BTree root, int layer);
 //
 #endif
