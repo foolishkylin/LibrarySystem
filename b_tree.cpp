@@ -10,7 +10,7 @@ int Search(BTree p, int k)
     return i;
 }
 
-void SearchBTree(BTree t, int k, RES *result)
+void SearchBTree(BTree t, int k, RES &result)
 // fun: searching in a btree 
 // ret: a result ptr including (pt, i, tag)
 // key: if searching successfully, tag = 1, [*pt][i]=k
@@ -49,34 +49,40 @@ void SearchBTree(BTree t, int k, RES *result)
 void split(BTree &q, int s, BTree& ap)
 {
 	int i, j, n = q->keynum;
-	ap = (BTNode*)malloc(sizeof(BTNode));
-	ap->ptr[0] = q->ptr[s];
-	for (i = s + 1, j = 1; i <= n; i++, j++)
+	ap = (BTree)malloc(sizeof(BTNode));
+	if (ap)
 	{
-		ap->key[j] = q->key[i];
-		ap->ptr[j] = q->ptr[i];
+		ap->ptr[0] = q->ptr[s];
+		for (i = s + 1, j = 1; i <= n; i++, j++)
+		{
+			ap->key[j] = q->key[i];
+			ap->ptr[j] = q->ptr[i];
+		}
+		ap->keynum = n - s;
+		ap->parent = q->parent;
+		for (i = 0; i <= n - s; i++)
+			if (ap->ptr[i])
+				ap->ptr[i]->parent = ap;
+		q->keynum = s - 1;
 	}
-	ap->keynum = n - s;
-	ap->parent = q->parent;
-	for (i = 0; i <= n - s; i++)
-		if (ap->ptr[i])
-			ap->ptr[i]->parent = ap;
-	q->keynum = s - 1;
 }
 
 
 void newRoot(BTree &t, BTree p, int x, BTree ap)
 {
 	t = (BTree)malloc(sizeof(BTNode));
-	t->keynum = 1;
-	t->ptr[0] = p;
-	t->ptr[1] = ap;
-	t->key[1] = x;
-	if (p)
-		p->parent = t;
-	if (ap)
-		ap->parent = t;
-	t->parent = NULL;
+	if (t)
+	{
+		t->keynum = 1;
+		t->ptr[0] = p;
+		t->ptr[1] = ap;
+		t->key[1] = x;
+		if (p)
+			p->parent = t;
+		if (ap)
+			ap->parent = t;
+		t->parent = NULL;
+	}
 }
 
 void Insert(BTree &q, int i, int x, BTree ap)
@@ -129,6 +135,19 @@ void InsertBTree(BTree& t, int k, BTree q, int i)
 
 }
 
-
+void DeleteBTree(BTree &p, int i)
+{
+	//if (p->ptr[i])
+	//{
+	//	successor(p, i);
+	//	deletebtree(p, 1);
+	//}
+	//else
+	//{
+	//	remove(p, i);
+	//	if (p->keynum < (m - 1) / 2)
+	//		restore(p, i);
+	//}
+}
 
 
