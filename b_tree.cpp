@@ -175,10 +175,14 @@ void InsertBTree(BTree& tree, int inserted_value, BTree inserted_node, int inser
 
 void DeleteBTree(BTree& deleted_node, int deleted_postion, BTree &t)
 {
-	if (deleted_node->ptr[deleted_postion])
+	if (deleted_node->ptr[deleted_postion-1])
 	{
+		BTree te = t;
 		Successor(deleted_node, deleted_postion);
-		DeleteBTree(deleted_node, 1, t);
+		printf("\n--now Successor!--\n");
+		ShowBTree(t, 0);
+		DeleteBTree(deleted_node, deleted_node->keynum, t);
+		// printf("\n--now Delete the %d!--\n", deleted_node->key[deleted_node->keynum - 1]);
 	}
 	else
 	{
@@ -204,7 +208,19 @@ void Remove(BTree& deleted_node, int deleted_postion)
 
 void Successor(BTree& deleted_node, int deleted_postion)
 {
-
+	// 把当前非叶结点的值与其左子交换，直到左子是叶子
+	KeyType temp = deleted_node->key[deleted_postion];
+	if (deleted_node->keynum < deleted_postion - 1)
+	{
+		printf("there is leaf!");
+		return ;
+	}
+	BTree min_son = deleted_node->ptr[deleted_postion - 1];
+	deleted_node->key[deleted_postion] = min_son->key[min_son->keynum];
+	min_son->key[min_son->keynum] = temp;
+	deleted_node = min_son;
+	if (min_son->ptr[min_son->keynum - 1])
+		Successor(deleted_node, deleted_node->keynum);
 }
 
 
@@ -277,6 +293,10 @@ void Restore(BTree& deleted_node, int deleted_postion, BTree &t)
 			for (i = deleted_node->keynum; i > 0; i--)
 				deleted_node->ptr[i] = deleted_node->ptr[i - 1];
 			deleted_node->ptr[0] = left_brother->ptr[left_brother->keynum];
+
+			// 调整父属性
+			if (deleted_node->ptr[0])
+				deleted_node->ptr[0]->parent = deleted_node;
 			Remove(left_brother, left_brother->keynum);
 			// here the left->brother->ptr[left_brother->keynum] != NULL
 			// but the left->brother->keynum--. so it is ok.
@@ -300,6 +320,9 @@ void Restore(BTree& deleted_node, int deleted_postion, BTree &t)
 			parent->key[parent_postion] = min_brother_key;
 
 			deleted_node->ptr[deleted_node->keynum] = right_brother->ptr[0];
+			// 调整父属性
+			if (deleted_node->ptr[deleted_node->keynum])
+				deleted_node->ptr[deleted_node->keynum]->parent = deleted_node;
 
 			for (int i = 1; i < right_brother->keynum; i++)
 			{
@@ -312,6 +335,11 @@ void Restore(BTree& deleted_node, int deleted_postion, BTree &t)
 		}
 		else
 		{
+			// 非叶结点的合并也需要注意子的过继问题
+			// 由于合并后父节点可能不空，所以合并结点可能在父节点的任意存在子位置
+			// 这导致了对于父节点的合并，其子的过继比较困难
+			// 故这里需要确保被合并结点必须被删除
+			// 然后过继所有子
 			BTree parent = deleted_node->parent;
 			KeyType parent_key = 0;
 			printf("now merge\n\n");
@@ -322,21 +350,45 @@ void Restore(BTree& deleted_node, int deleted_postion, BTree &t)
 				parent_key = parent->key[deleted_node_position];
 				// parent->ptr[deleted_node_position] = NULL;
 				Remove(parent, deleted_node_position);
+				// 这里父节点由于合并的key与指向被合并子的指针被删除
 				// extract the middle key of parent
 				
 				left_brother->keynum += 1;
 				left_brother->key[left_brother->keynum] = parent_key;
-
-				while (deleted_node->keynum)
+				// 合并父节点后，最后一个指针是空
+				// 如果被合并结点非空，继承其所有子
+				if (deleted_node->keynum)
 				{
-					// left_brother->keynum++;
-					if (left_brother->keynum > 4)
+					left_brother->ptr[left_brother->keynum] = deleted_node->ptr[0];
+					if (left_brother->ptr[left_brother->keynum])
+						left_brother->ptr[left_brother->keynum]->parent = left_brother;
+					while (deleted_node->keynum)
 					{
-						printf("error in merge: node->keynum overflow!");
-						break;
+						// left_brother->keynum++;
+						if (left_brother->keynum > 4)
+						{
+							printf("error in merge: node->keynum overflow!");
+							break;
+						}
+						left_brother->key[++left_brother->keynum] = deleted_node->key[1];
+						if (deleted_node->ptr[1])
+						{
+							left_brother->ptr[left_brother->keynum] = deleted_node->ptr[1];
+							left_brother->ptr[left_brother->keynum]->parent = left_brother;
+						}
+						Remove(deleted_node, 1);
 					}
-					left_brother->key[++left_brother->keynum] = deleted_node->key[1];
-					Remove(deleted_node, 1);
+				}
+				else
+					// 如果被合并结点空，则继承其0/1号指针上非空的那个
+				{
+					if (deleted_node->ptr[0])
+						left_brother->ptr[left_brother->keynum] = deleted_node->ptr[0];
+					else if (deleted_node->ptr[1])
+						left_brother->ptr[left_brother->keynum] = deleted_node->ptr[1];
+
+					if (left_brother->ptr[left_brother->keynum])
+						left_brother->ptr[left_brother->keynum]->parent = left_brother;
 				}
 				printf("parent_key_num: %d\n", parent->keynum);
 				free(deleted_node);
@@ -352,21 +404,65 @@ void Restore(BTree& deleted_node, int deleted_postion, BTree &t)
 				// 并非(parent->keynum + 1) / 2]， 应是分割left_brother与deleted_node的位置
 				parent_key = parent->key[deleted_node_position + 1];
 				// parent->ptr[deleted_node_position] = NULL;
-				Remove(parent, deleted_node_position+1);
+				// ERROR: Remove(parent, deleted_node_position+1); 这里删除了指向合并子的指针，正确应如下
+
+				// 此处删除父节点由于合并的key
+				for (int i = deleted_node_position; i < parent->keynum; i++)
+					parent->key[i] = parent->key[i + 1];
+				// 此处删除父结点指向被合并子的指针
+				if (parent->keynum)
+					for (i = deleted_node_position; i < parent->keynum; i++)
+						parent->ptr[i] = parent->ptr[i + 1];
+				else
+					parent->ptr[deleted_node_position] = NULL;
+				parent->keynum -= 1;
+				// 若此，之后父节点时，若父空，则直接过继左右子非空的那一部分
+
 				// extract the middle key of parent
 
 				right_brother->keynum += 1;
+				right_brother->ptr[right_brother->keynum] = right_brother->ptr[right_brother->keynum - 1];
 				for (i = right_brother->keynum; i > 1; i--)
+				{
 					right_brother->key[i] = right_brother->key[i - 1];
+					right_brother->ptr[i - 1] = right_brother->ptr[i - 2];
+				}
 				right_brother->key[1] = parent_key;
 
-				while (deleted_node->keynum)
+
+				// 此处右兄弟需要继承被合并结点的子
+				// 若被合并结点非空，应按照父节点，被合并结点的较大子，较小子的顺序插入到右兄弟的0号指针
+				if (deleted_node->keynum)
 				{
-					// left_brother->keynum++;
-					for (i = right_brother->keynum; i > 1; i--)
-						right_brother->key[i] = right_brother->key[i - 1];
-					right_brother->key[1] = deleted_node->key[deleted_node->keynum];
-					Remove(deleted_node, deleted_node->keynum);
+					right_brother->ptr[0] = deleted_node->ptr[deleted_node->keynum];
+					if (right_brother->ptr[0])
+						right_brother->ptr[0]->parent = right_brother;
+					while (deleted_node->keynum)
+					{
+						for (i = right_brother->keynum; i > 1; i--)
+						{
+							right_brother->key[i] = right_brother->key[i - 1];
+							right_brother->ptr[i - 1] = right_brother->ptr[i - 2];
+						}
+						right_brother->key[1] = deleted_node->key[deleted_node->keynum];
+						Remove(deleted_node, deleted_node->keynum);
+						if (deleted_node->ptr[deleted_node->keynum])
+						{
+							right_brother->ptr[0] = deleted_node->ptr[deleted_node->keynum];
+							right_brother->ptr[0]->parent = right_brother;
+						}
+					}
+				}
+				else
+				// 如果被合并结点空，则继承其0/1号指针上非空的那个
+				{
+					if (deleted_node->ptr[0])
+						right_brother->ptr[0] = deleted_node->ptr[0];
+					else if (deleted_node->ptr[1])
+						right_brother->ptr[0] = deleted_node->ptr[1];
+					
+					if (right_brother->ptr[0])
+						right_brother->ptr[0]->parent = right_brother;
 				}
 				free(deleted_node);
 			}
